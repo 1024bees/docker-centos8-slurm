@@ -2,31 +2,30 @@
 
 [![Docker Pulls](https://img.shields.io/docker/pulls/giovtorres/docker-centos7-slurm.svg)](https://hub.docker.com/r/giovtorres/docker-centos7-slurm/)
 
-This is an all-in-one [Slurm](https://slurm.schedmd.com/) installation.  This
+This is an all-in-one [Slurm](https://slurm.schedmd.com/) installation. This
 container runs the following processes:
 
-* slurmd (The compute node daemon for Slurm)
-* slurmctld (The central management daemon of Slurm)
-* slurmdbd (Slurm database daemon)
-* slurmrestd (Slurm REST API daemon)
-* munged (Authentication service for creating and validating credentials)
-* mariadb (MySQL compatible database)
-* supervisord (A process control system)
+- slurmd (The compute node daemon for Slurm)
+- slurmctld (The central management daemon of Slurm)
+- slurmdbd (Slurm database daemon)
+- munged (Authentication service for creating and validating credentials)
+- mariadb (MySQL compatible database)
+- supervisord (A process control system)
 
 It also has the following Python versions installed using
 [pyenv](https://github.com/pyenv/pyenv):
 
-* 3.6.15
-* 3.7.12
-* 3.8.12
-* 3.9.9
-* 3.10.0
+- 3.6.15
+- 3.7.12
+- 3.8.12
+- 3.9.9
+- 3.10.0
 
 ## Usage
 
 There are multiple
 [tags](https://hub.docker.com/r/giovtorres/docker-centos7-slurm/tags/)
-available.  To use the latest available image, run:
+available. To use the latest available image, run:
 
 ```shell
 docker pull giovtorres/docker-centos7-slurm:latest
@@ -44,7 +43,6 @@ mysqld                           RUNNING   pid 24, uptime 0:02:35
 slurmctld                        RUNNING   pid 25, uptime 0:02:35
 slurmd                           RUNNING   pid 22, uptime 0:02:35
 slurmdbd                         RUNNING   pid 26, uptime 0:02:35
-slurmrestd                       RUNNING   pid 456, uptime 0:02:00
 ```
 
 In `slurm.conf`, the **ControlMachine** hostname is set to **slurmctl**. Since
@@ -78,7 +76,7 @@ PartitionName=normal
 
 ### Using Existing Tags
 
-There are multiple versions of Slurm available, each with its own tag.  To build
+There are multiple versions of Slurm available, each with its own tag. To build
 a specific version of Slurm, checkout the tag that matches that version and
 build the Dockerfile:
 
@@ -111,8 +109,8 @@ docker build --build-arg PYTHON_VERSIONS="3.6 3.7" -t docker-centos7-slurm:py3
 ## Using docker-compose
 
 The included docker-compose file will run the cluster container in the
-background.  The docker-compose file uses data volumes to store the slurm state
-between container runs.  To start the cluster container, run:
+background. The docker-compose file uses data volumes to store the slurm state
+between container runs. To start the cluster container, run:
 
 ```shell
 docker-compose up -d

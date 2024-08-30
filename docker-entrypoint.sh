@@ -63,7 +63,7 @@ echo "- Starting supervisord process manager"
 /usr/bin/supervisord --configuration /etc/supervisord.conf
 
 echo "- Starting all Services..."
-for service in munged mysqld slurmdbd slurmctld slurmd slurmrestd
+for service in munged mysqld slurmdbd slurmctld slurmd 
 do
     /usr/bin/supervisorctl start "$service:*"
 done

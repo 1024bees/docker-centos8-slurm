@@ -1,24 +1,25 @@
-FROM centos:7.9.2009
+FROM centos:centos8
 
-LABEL org.opencontainers.image.source="https://github.com/giovtorres/docker-centos7-slurm" \
-      org.opencontainers.image.title="docker-centos7-slurm" \
-      org.opencontainers.image.description="Slurm All-in-one Docker container on CentOS 7" \
-      org.label-schema.docker.cmd="docker run -it -h slurmctl giovtorres/docker-centos7-slurm:latest" \
-      maintainer="Giovanni Torres"
+LABEL org.opencontainers.image.source="https://github.com/1024bees/docker-centos8-slurm" \
+      org.opencontainers.image.title="docker-centos8-slurm" \
+      org.opencontainers.image.description="Slurm All-in-one Docker container on CentOS 8" \
+      org.label-schema.docker.cmd="docker run -it -h slurmctl 2048bees/docker-centos8-slurm:latest" \
+      maintainer="Jimmy Porkchop"
 
 ENV PATH "/root/.pyenv/shims:/root/.pyenv/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin"
 
 EXPOSE 6817 6818 6819 6820 3306
+RUN  sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
 
+RUN yum install -y dnf-plugins-core &&  yum install -y epel-release &&  yum config-manager --set-enabled powertools
 # Install common YUM dependency packages
 # The IUS repo install epel-release as a dependency while also providing a newer version of Git
 RUN set -ex \
-    && yum makecache fast \
     && yum -y update \
-    && yum -y install https://repo.ius.io/ius-release-el7.rpm \
     && yum -y install \
         autoconf \
         bash-completion \
+        python39 python39-pip python39-devel  \
         bzip2 \
         bzip2-devel \
         file \
@@ -26,7 +27,7 @@ RUN set -ex \
         gcc \
         gcc-c++ \
         gdbm-devel \
-        git236 \
+        git \
         glibc-devel \
         gmp-devel \
         libffi-devel \
@@ -80,37 +81,39 @@ RUN chmod +x /tini
 
 # Install OpenSSL1.1.1
 # See PEP 644: https://www.python.org/dev/peps/pep-0644/
-ARG OPENSSL_VERSION="1.1.1s"
-RUN set -ex \
-    && wget --quiet https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz \
-    && tar xzf openssl-${OPENSSL_VERSION}.tar.gz \
-    && pushd openssl-${OPENSSL_VERSION} \
-    && ./config --prefix=/opt/openssl --openssldir=/etc/ssl \
-    && make \
-    && make test \
-    && make install \
-    && echo "/opt/openssl/lib" >> /etc/ld.so.conf.d/openssl.conf \
-    && ldconfig \
-    && popd \
-    && rm -f openssl-${OPENSSL_VERSION}.tar.gz
+#ARG OPENSSL_VERSION="1.1.1s"
+#RUN set -ex \
+#    && wget --quiet https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz \
+#    && tar xzf openssl-${OPENSSL_VERSION}.tar.gz \
+#    && pushd openssl-${OPENSSL_VERSION} \
+#    && ./config --prefix=/opt/openssl --openssldir=/etc/ssl \
+#    && make \
+#    && make test \
+#    && make install \
+#    && echo "/opt/openssl/lib" >> /etc/ld.so.conf.d/openssl.conf \
+#    && ldconfig \
+#    && popd \
+#    && rm -f openssl-${OPENSSL_VERSION}.tar.gz
+#
+## Install supported Python versions and install dependencies.
+## Set the default global to the latest supported version.
+## Use pyenv inside the container to switch between Python versions.
+#ARG PYTHON_VERSIONS="3.6.15 3.7.16 3.8.16 3.9.16 3.10.9 3.11.1"
+#ARG CONFIGURE_OPTS="--with-openssl=/opt/openssl"
+#RUN set -ex \
+#    && curl https://pyenv.run | bash \
+#    && echo "eval \"\$(pyenv init --path)\"" >> "${HOME}/.bashrc" \
+#    && echo "eval \"\$(pyenv init -)\"" >> "${HOME}/.bashrc" \
+#    && source "${HOME}/.bashrc" \
+#    && pyenv update \
+#    && for python_version in ${PYTHON_VERSIONS}; \
+#        do \
+#            pyenv install $python_version; \
+#            pyenv global $python_version; \
+#            pip install Cython pytest; \
+#        done
 
-# Install supported Python versions and install dependencies.
-# Set the default global to the latest supported version.
-# Use pyenv inside the container to switch between Python versions.
-ARG PYTHON_VERSIONS="3.6.15 3.7.16 3.8.16 3.9.16 3.10.9 3.11.1"
-ARG CONFIGURE_OPTS="--with-openssl=/opt/openssl"
-RUN set -ex \
-    && curl https://pyenv.run | bash \
-    && echo "eval \"\$(pyenv init --path)\"" >> "${HOME}/.bashrc" \
-    && echo "eval \"\$(pyenv init -)\"" >> "${HOME}/.bashrc" \
-    && source "${HOME}/.bashrc" \
-    && pyenv update \
-    && for python_version in ${PYTHON_VERSIONS}; \
-        do \
-            pyenv install $python_version; \
-            pyenv global $python_version; \
-            pip install Cython pytest; \
-        done
+RUN alternatives --set python /usr/bin/python3.9
 
 # Compile, build and install Slurm from Git source
 ARG SLURM_TAG=slurm-22-05-8-1
@@ -118,7 +121,7 @@ ARG JOBS=4
 RUN set -ex \
     && git clone -b ${SLURM_TAG} --single-branch --depth=1 https://github.com/SchedMD/slurm.git \
     && pushd slurm \
-    && ./configure --prefix=/usr --sysconfdir=/etc/slurm --enable-slurmrestd \
+    && ./configure --prefix=/usr --sysconfdir=/etc/slurm \
         --with-mysql_config=/usr/bin --libdir=/usr/lib64 --enable-multiple-slurmd \
     && sed -e 's|#!/usr/bin/env python3|#!/usr/bin/python|' -i doc/html/shtml2html.py \
     && make -j ${JOBS} install \
